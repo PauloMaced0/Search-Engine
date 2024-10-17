@@ -13,7 +13,7 @@ This Information Retrieval System allows users to index a corpus of documents an
   - [Indexing](#indexing)
   - [Searching](#searching)
 - [Classes](#classes)
-  - [Corpus Reader](#corpus-reader)
+  - [CorpusReader](#corpusreader)
   - [SPIMIIndexer](#spimiindexer)
   - [Tokenizer](#tokenizer)
   - [BM25Searcher](#bm25searcher)
