@@ -116,7 +116,7 @@ The `Tokenizer` class is responsible for tokenizing text and normalizing tokens 
 
 The `BM25Searcher` class is responsible for searching documents based on the BM25 ranking model.
 
-> **Note**: The `BM25Searcher` class is mentioned in the code but not defined in the provided snippet. Yet to be implemented for the searching functionality.
+> **Note**: The `BM25Searcher` class is mentioned in the code but doesn't work as expected. Yet to be completed and tested for the searching functionality.
 """
 
 ## Dependencies 
