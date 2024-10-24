@@ -116,6 +116,14 @@ The `Tokenizer` class is responsible for tokenizing text and normalizing tokens 
 
 The `BM25Searcher` class is responsible for searching documents based on the BM25 ranking model.
 
+The `BM25` retrieval function calculates a relevance score for each document based on a specific search query.
+
+The algorithm looks at three things:
+
+1. How often do the query terms appear in the document.
+2. The length of the document.
+3. The average length of all documents in the collection.
+
 > **Note**: The `BM25Searcher` class is mentioned in the code but doesn't work as expected. Yet to be completed and tested for the searching functionality.
 """
 
