@@ -1,6 +1,7 @@
 import time
 import argparse
 import os
+import ujson
 from src.corpus_reader import CorpusReader
 from src.spimi_indexer import SPIMIIndexer
 from src.searcher import BM25Searcher
@@ -17,8 +18,7 @@ def main():
     group.add_argument('--index', action='store_true', help="Run the indexer")
     group.add_argument('--search', action='store_true', help="Run the searcher")
     
-    # Query and corpus arguments
-    parser.add_argument('--query', type=str, help="Query for searching documents")
+    # Corpus arguments
     parser.add_argument('--corpus', type=str, help="Path to the corpus file", default='data/MEDLINE_2024_Baseline.jsonl')
     parser.add_argument('--output_dir', type=str, help="Directory to store partial and merged indexes", default='output')
 
@@ -35,15 +35,21 @@ def main():
     # Batch size argument for indexer
     parser.add_argument('--batch_size', type=int, default=10000, help="Number of documents per batch for indexing")
 
-    # Load specific index for search
+    # Load specific index for search and number of results
     parser.add_argument('--load_index', type=str, help="Path to pre-built index file to load for searching")
+    parser.add_argument('--num_results', type=int, default=100, help="Number of results to return for the query")
+
+    search_group = parser.add_mutually_exclusive_group()
+    search_group.add_argument('--query', type=str, help="Query for searching documents")
+    search_group.add_argument('--questions_file', type=str, help="Path to the questions file (JSONL) for batch processing")
+    search_group.add_argument('--interactive', action='store_true', help="Run in interactive mode for manual query input")
 
     args = parser.parse_args()
 
-    if args.search and not args.query:
-        parser.error("--query is required when --search is selected.")
+    if args.search and not args.query and not args.questions_file and not args.interactive:
+        parser.error("--query | --questions_file | --interactive is required when --search is selected.")
 
-    merged_index_dir = os.path.join(args.output_dir, "merged_index.msgpack")
+    index_dir = os.path.join(args.output_dir, "merged_index.msgpack")
     tokenizer_config_dir = os.path.join(args.output_dir, "tokenizer_config.msgpack")
 
     if args.index:
@@ -58,32 +64,89 @@ def main():
 
         tokenizer = Tokenizer(min_token_length=args.min_token_length, lowercase=args.lowercase, stem=args.stemming, remove_stopwords=args.stopwords)
         corpus_reader = CorpusReader(args.corpus)
-        indexer = SPIMIIndexer(tokenizer, args.output_dir, merged_index_dir, args.batch_size)
+        indexer = SPIMIIndexer(tokenizer, args.output_dir, index_dir, args.batch_size)
         indexer.process_corpus(corpus_reader)
         
         end = time.time()
         print(f'Doc tokenization and indexing: {end-start:.6f} seconds')
 
     elif args.search:
-        print(f"Searching with query: {UNDERLINE}{args.query}{RESET}")
+        if args.query:
+            print(f"Searching with query: {UNDERLINE}{args.query}{RESET}")
+        elif args.questions_file:
+            print(f"Processing questions from file: {UNDERLINE}{args.questions_file}{RESET}")
+        elif args.interactive:
+            print("Entering interactive mode for manual query input.")
 
         if args.load_index:
             print(f"Loading index from: {UNDERLINE}{args.load_index}{RESET}")
+            index_dir = args.load_index
 
         print(f"BM25 parameters: k1 = {UNDERLINE}{args.k1}{RESET}, b = {UNDERLINE}{args.b}{RESET}")
 
-        searcher = BM25Searcher(index_path=merged_index_dir, metadata_path=tokenizer_config_dir)
-        results = searcher.search(args.query)
-        # Later to be stored in ranked_questions.jsonl
-        # {
-        # “id”:“<question_id>”,
-        # “question”: “<question_text>”, 
-        # “retrieved_documents”: 
-        #   [ “<doc_id_pos_1>”, “<doc_id_pos_2>”, ..., “<doc_id_pos_100>”,]
-        # },
-        # ...
-        for doc_id, score in results:
-            print(f"Document {doc_id} - Score: {score}")
+        start = time.time()
+
+        searcher = BM25Searcher(index_path=index_dir, tokenizer_config_path=tokenizer_config_dir)
+
+        output_data = []
+        if args.interactive:
+            query_count = 1
+            while True:
+                query = input("Enter your query (or type 'exit' to quit): ")
+                if query.lower() == 'exit':
+                    break
+                results = searcher.search(query, n_scores=args.num_results)
+                retrieved_docs = [doc_id for doc_id, _ in results]
+
+                output_entry = {
+                    "id": f"interactive_{query_count}",
+                    "question": query,
+                    "retrieved_documents": retrieved_docs
+                }
+                output_data.append(output_entry)
+                query_count += 1
+
+        elif args.questions_file:
+            output_data = []
+            with open(args.questions_file, 'r') as f:
+                for line in f:
+                    question_data = ujson.loads(line)
+                    question = question_data['question']
+                    query_id = question_data['query_id']
+                    # goldstandard_docs = question_data['goldstandard_documents']
+
+                    results = searcher.search(question, n_scores=args.num_results)
+                    print(f"Results for Query ID {query_id}: {question}")
+                    for doc_id, score in results:
+                        print(f"Document {doc_id} - Score: {score}")       
+
+                    retrieved_docs = [doc_id for doc_id, _ in results]
+                    
+                    output_entry = {
+                        "id": query_id,
+                        "question": question,
+                        "retrieved_documents": retrieved_docs
+                    }
+                    output_data.append(output_entry)
+        else:
+            results = searcher.search(args.query, args.num_results)
+            retrieved_docs = [doc_id for doc_id, _ in results]
+
+            output_entry = {
+                "id": "Command_line_query",
+                "question": args.query,
+                "retrieved_documents": retrieved_docs
+            }
+            output_data.append(output_entry)
+        
+        output_file_path = os.path.join(args.output_dir, 'ranked_questions.jsonl')
+        with open(output_file_path, 'w') as outfile:
+            for entry in output_data:
+                json_line = ujson.dumps(entry)
+                outfile.write(json_line + '\n')
+
+        end = time.time()
+        print(f'Searching document collection: {end-start:.6f} seconds')
 
 if __name__ == '__main__':
     main()
