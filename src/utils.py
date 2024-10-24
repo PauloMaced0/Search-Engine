@@ -1,9 +1,27 @@
 # Utility functions
-def index_document(tokenizer, index, doc_lengths, doc_id, text):
-    """Indexes a single document by tokenizing and creating positional postings."""
-    tokens = tokenizer.tokenize(text)
-    doc_lengths[doc_id] = len(tokens)
-    print("pls")
+import os
+import msgpack
 
-    for pos, term in enumerate(tokens):
-        index[term][doc_id].append(pos)
+def read_merged_index(merged_index_file):
+    # Check if the file exists
+    if not os.path.exists(merged_index_file):
+        print(f"Error: File '{merged_index_file}' does not exist.")
+        return
+
+    # Open and read the merged index file using MessagePack
+    with open(merged_index_file, 'rb') as f:
+        unpacker = msgpack.Unpacker(f, raw=False)
+        merged_data = next(unpacker)
+
+    # Display the inverted index
+
+    # for word in merged_data['index'].items():
+    #     print(word)
+    #     return
+
+    # Display the document lengths 
+
+    for word in merged_data['doc_lengths'].items():
+        print(word)
+        return
+
