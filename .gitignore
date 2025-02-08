@@ -1,4 +1,6 @@
 .DS_Store
+indexing_searching/output
+reranking/output
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
