@@ -7,7 +7,6 @@ This Information Retrieval System allows users to index a corpus of documents an
 # Table of Contents
 
 - [Features](#features)
-- [Installation](#installation)
 - [Usage](#usage)
   - [Command Line Arguments](#command-line-arguments)
   - [Indexing](#indexing)
