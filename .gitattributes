@@ -1,2 +1,0 @@
-data/MEDLINE_2024_Baseline.jsonl filter=lfs diff=lfs merge=lfs -text
-data/questions.jsonl filter=lfs diff=lfs merge=lfs -text
