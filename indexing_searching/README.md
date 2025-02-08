@@ -43,19 +43,6 @@ This Information Retrieval System allows users to index a corpus of documents an
 - **Searching**: Implements the BM25 ranking model for retrieving relevant documents based on user queries.
 - **Tokenizer**: Supports tokenization with options for case normalization, stopword removal, and stemming.
 
-## Installation
-
-To set up the Information Retrieval System, clone the repository and install the required dependencies:
-
-```bash
-git clone <repository-url>
-cd <repository-folder>
-chmod +x setup.sh
-./setup.sh
-```
-
-Make sure to have Python 3.x installed on your machine.
-
 ## Usage
 
 The system can be run from the command line. Use the following command structure:
