@@ -18,7 +18,7 @@ The Neural Reranker and Evaluation System enhances the baseline Information Retr
   - [SimpleDataset](#simpledataset)
   - [Tokenizer](#tokenizer)
 - [Enhancements](#enhancements)
-- [Conclusion](#conclusions)
+- [Conclusion](#conclusion)
 
 ## Features
 
