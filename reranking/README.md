@@ -8,12 +8,10 @@ The Neural Reranker and Evaluation System enhances the baseline Information Retr
 
 - [Features](#features)
 - [Usage](#usage)
-  - [Training the CNN Reranker](#training-the-cnn-reranker)
-  - [Performing Reranking](#performing-reranking)
-  - [Command Line Arguments](#commmand-line-arguments)
+  - [Command Line Arguments](#command-line-arguments)
 - [Trained Models](#trained-models)
-  - [Model 1: Positive-Negative Sample Ratio 1:1](#model-1:-positive-negative-sample-ratio-1:1)
-  - [Model 2: Positive-Negative Sample Ratio 1:2](#model-2:-positive-negative-sample-ratio-1:2)
+  - [Model 1: Positive-Negative Sample Ratio 1:1](#model-1-positive-negative-sample-ratio-11)
+  - [Model 2: Positive-Negative Sample Ratio 1:2](#model-2-positive-negative-sample-ratio-12)
   - [Results and Observations](#results-and-observations)
 - [Components](#components)
   - [CNNInteractionBasedModel](#cnninteractionbasedmodel)
@@ -32,17 +30,11 @@ The Neural Reranker and Evaluation System enhances the baseline Information Retr
 
 ## Usage
 
-The system comprises a main script:
-
-1. **Training and Reranking**: `cli.py`
-
-### Training the CNN Reranker
-
-To train the CNN-based reranker model, execute the `cli.py` script with appropriate arguments.
+The system comprises a main script `cli.py`.
 
 **Command Structure**:
 ```bash
-python cli.py [options]
+python3 cli.py [options]
 ```
 
 ### Command Line Arguments
@@ -50,7 +42,7 @@ python cli.py [options]
 To showcase the Command Line Interface, run:
 
 ```bash
-python cli.py --help
+python3 cli.py --help
 ```
 
 | Argument               | Type    | Default                        | Description                                                                                  |
