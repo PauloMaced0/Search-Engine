@@ -19,8 +19,8 @@ def main():
     group.add_argument('--search', action='store_true', help="Run the searcher")
     
     # Corpus arguments
-    parser.add_argument('--corpus', type=str, help="Path to the corpus file", default='data/MEDLINE_2024_Baseline.jsonl')
-    parser.add_argument('--output_dir', type=str, help="Directory to store partial and merged indexes", default='output')
+    parser.add_argument('--corpus', type=str, help="Path to the corpus file", default='../data/MEDLINE_2024_Baseline.jsonl')
+    parser.add_argument('--output_dir', type=str, help="Directory to store partial and merged indexes", default='../output')
 
     # Tokenizer configuration
     parser.add_argument('--min_token_length', type=int, default=3, help="Minimum token length for tokenization")
