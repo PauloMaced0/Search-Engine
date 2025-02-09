@@ -10,12 +10,17 @@ The Neural Reranker and Evaluation System enhances the baseline Information Retr
 - [Usage](#usage)
   - [Training the CNN Reranker](#training-the-cnn-reranker)
   - [Performing Reranking](#performing-reranking)
-  - [Computing Ranking Metrics](#computing-ranking-metrics)
+  - [Command Line Arguments](#commmand-line-arguments)
+- [Trained Models](#trained-models)
+  - [Model 1: Positive-Negative Sample Ratio 1:1](#model-1:-positive-negative-sample-ratio-1:1)
+  - [Model 2: Positive-Negative Sample Ratio 1:2](#model-2:-positive-negative-sample-ratio-1:2)
+  - [Results and Observations](#results-and-observations)
 - [Components](#components)
   - [CNNInteractionBasedModel](#cnninteractionbasedmodel)
   - [SimpleDataset](#simpledataset)
   - [Tokenizer](#tokenizer)
-- [Dependencies](#dependencies)
+- [Enhancements](#enhancements)
+- [Conclusion](#conclusions)
 
 ## Features
 
@@ -27,10 +32,9 @@ The Neural Reranker and Evaluation System enhances the baseline Information Retr
 
 ## Usage
 
-The system comprises two main scripts:
+The system comprises a main script:
 
 1. **Training and Reranking**: `cli.py`
-2. **Computing nDCG**: `nDCG.py`
 
 ### Training the CNN Reranker
 
@@ -38,60 +42,34 @@ To train the CNN-based reranker model, execute the `cli.py` script with appropri
 
 **Command Structure**:
 ```bash
-python cli.py --index|--search [options]
+python cli.py [options]
 ```
 
 ### Command Line Arguments
 
+To showcase the Command Line Interface, run:
+
+```bash
+python cli.py --help
+```
+
 | Argument               | Type    | Default                        | Description                                                                                  |
 |------------------------|---------|--------------------------------|----------------------------------------------------------------------------------------------|
-| `--pretrained_embeddings`              | string    | `data/glove.42B.300d.txt`                              | Path to the pretrained embeddings file (txt format).                            |
-| `--corpus`             | string    | `data/MEDLINE_2024_Baseline.jsonl`                              | Path to the corpus file (JSONL format).                                          |
-| `--questions_file`              | string  | `data/questions.jsonl`                              | Path to the questions file (JSONL format).                        |
-| `--bm25_ranked_file`             | string  | `data/questions_bm25_ranked.jsonl	` | Path to the BM25-ranked file (JSONL format).                                      |
-| `--training_data`         | string  | `data/training_data.jsonl	`                       | Path to the questions training file (JSONL format).                                             |
-| `--training_data_bm25_ranked`   | string     | `data/training_data_bm25_ranked.jsonl`                              | Path to the BM25-ranked training file (JSONL format).                                                     |
-| `--output_file`          | string    | `output/final_ranked_questions.jsonl`                           | Path to save the reranked results (JSONL format).                                              |
-| `--model_checkpoint`          | string  | `output/trained_cnn_model.pt`                              | Path to the trained model checkpoint (if exists, load it; else train new model).                                                       |
+| `--pretrained_embeddings`              | string    | `../data/glove.42B.300d.txt`                              | Path to the pretrained embeddings file (txt format).                            |
+| `--corpus`             | string    | `../data/MEDLINE_2024_Baseline.jsonl`                              | Path to the corpus file (JSONL format).                                          |
+| `--questions_file`              | string  | `../data/questions.jsonl`                              | Path to the questions file (JSONL format).                        |
+| `--bm25_ranked_file`             | string  | `../data/questions_bm25_ranked.jsonl	` | Path to the BM25-ranked file (JSONL format).                                      |
+| `--training_data`         | string  | `../data/training_data.jsonl	`                       | Path to the questions training file (JSONL format).                                             |
+| `--training_data_bm25_ranked`   | string     | `../data/training_data_bm25_ranked.jsonl`                              | Path to the BM25-ranked training file (JSONL format).                                                     |
+| `--output_file`          | string    | `../output/final_ranked_questions.jsonl`                           | Path to save the reranked results (JSONL format).                                              |
+| `--model_checkpoint`          | string  | `../output/trained_cnn_model.pt`                              | Path to the trained model checkpoint (if exists, load it; else train new model).                                                       |
 | `--batch_size`           | int    | 64                          | Batch size for reranking.                                                   |
 | `--number_documents_ranked`                 | int   | 10                            | Number of top documents retrieved for each question.                                     |
 | `--epochs`                  | int   | 5                           | Number of training epochs.                                 |
 | `--learning_rate`         | float     | 0.001                          | Learning rate for optimizer.                                                |
 
-### Performing Reranking 
-
-After training the model, reranking is performed as part of the `cli.py` script. The reranked results are saved to the specified `--output_file`.
-
-```bash
-python main.py --index --corpus path/to/corpus.jsonl --output_dir path/to/output
-```
-
-### Computing Ranking Metrics 
-
-To evaluate the reranked results using nDCG@10, execute the `nDCG.py` script.
-
-**Command Structure**:
-```bash
-python nDCG.py [options]
-```
-
-### Command Line Arguments
-
-| Argument               | Type    | Default                        | Description                                                                                  |
-|------------------------|---------|--------------------------------|----------------------------------------------------------------------------------------------|
-| `--questions_file`              | string    | `data/questions.jsonl`                              | Path to the questions file (JSONL).                            |
-| `--results_file`             | string | `output/final_ranked_questions.jsonl	`                              | Path to the ranked results file (JSONL).                                          |
-| `--k`              | int | 10                              | Rank cutoff for nDCG computation.                        |
-
-**Sample Output** (when you run: `python3 cli.py --model_checkpoint output/trained_cnn_model_1.pt && python3 nDCG.py`)
-
-```graphql
-Query ID: 63f73f1b33942b094c000008, nDCG@10: 0.0000
-Query ID: 643d41e757b1c7a315000037, nDCG@10: 0.2027
-Query ID: 643c88a257b1c7a315000030, nDCG@10: 0.0000
-...
-Average nDCG@10: 0.1115
-```
+> [!NOTE]
+> See `entrypoint.sh` script to see some examples on how to execute this script.
 
 ## Trained Models
 

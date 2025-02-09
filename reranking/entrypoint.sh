@@ -4,9 +4,8 @@
 set -e
 
 # Define directories
-PROJECT_DIR=$(pwd)
-DATA_DIR="$PROJECT_DIR/data"
-OUTPUT_DIR="$PROJECT_DIR/output"
+DATA_DIR="../data"
+OUTPUT_DIR="../output"
 
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
@@ -14,7 +13,7 @@ mkdir -p "$OUTPUT_DIR"
 # Step 2: Train the CNN Reranker Model and Perform Reranking
 echo "Training the CNN reranker model and performing reranking..."
 
-python train_and_rerank.py \
+python cli.py \
     --pretrained_embeddings "$DATA_DIR/glove.42B.300d.txt" \
     --corpus "$DATA_DIR/MEDLINE_2024_Baseline.jsonl" \
     --questions_file "$DATA_DIR/questions.jsonl" \

@@ -4,8 +4,8 @@ import ujson
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from src.tokenizer import Tokenizer  # Assuming the tokenizer implementation is in src
-from src.model import CNNInteractionBasedModel  # Assuming the model implementation is in src
+from src.tokenizer import Tokenizer
+from src.model import CNNInteractionBasedModel
 from src.utils import load_pretrained_embeddings, build_collate_fn, get_all_doc_texts, get_questions, load_questions
 from torch.utils.data import DataLoader
 from src.simple_dataset import SimpleDataset
@@ -88,13 +88,13 @@ def main():
     parser = argparse.ArgumentParser(description="Neural Reranker CLI")
     
     # Input arguments
-    parser.add_argument('--pretrained_embeddings', type=str, help="Path to the pretrained embeddings file (txt format)", default='data/glove.42B.300d.txt')
-    parser.add_argument('--corpus', type=str, help="Path to the corpus file (JSONL format)", default="../Assignment 1/data/MEDLINE_2024_Baseline.jsonl")
-    parser.add_argument('--questions_file', type=str, help="Path to the questions file (JSONL format)", default='data/questions.jsonl')
-    parser.add_argument('--bm25_ranked_file', type=str, help="Path to the BM25-ranked file (JSONL format)", default='data/questions_bm25_ranked.jsonl')
-    parser.add_argument('--training_data', type=str, help="Path to the questions training file (JSONL format)", default='data/training_data.jsonl')
-    parser.add_argument('--training_data_bm25_ranked', type=str, help="Path to the BM25-ranked training file (JSONL format)", default='data/training_data_bm25_ranked.jsonl')
-    parser.add_argument('--output_file', type=str, help="Path to save the reranked results (JSONL format)", default='output/final_ranked_questions.jsonl')
+    parser.add_argument('--pretrained_embeddings', type=str, help="Path to the pretrained embeddings file (txt format)", default='../data/glove.42B.300d.txt')
+    parser.add_argument('--corpus', type=str, help="Path to the corpus file (JSONL format)", default="../data/MEDLINE_2024_Baseline.jsonl")
+    parser.add_argument('--questions_file', type=str, help="Path to the questions file (JSONL format)", default='../data/questions.jsonl')
+    parser.add_argument('--bm25_ranked_file', type=str, help="Path to the BM25-ranked file (JSONL format)", default='../data/questions_bm25_ranked.jsonl')
+    parser.add_argument('--training_data', type=str, help="Path to the questions training file (JSONL format)", default='../data/training_data.jsonl')
+    parser.add_argument('--training_data_bm25_ranked', type=str, help="Path to the BM25-ranked training file (JSONL format)", default='../data/training_data_bm25_ranked.jsonl')
+    parser.add_argument('--output_file', type=str, help="Path to save the reranked results (JSONL format)", default='../output/final_ranked_questions.jsonl')
 
     # Model arguments
     parser.add_argument('--model_checkpoint', type=str, help="Path to the trained model checkpoint (if exists, load it; else train new model)")

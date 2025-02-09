@@ -1,5 +1,4 @@
 import torch
-import random
 import ujson
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
