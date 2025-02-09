@@ -1,6 +1,6 @@
 .DS_Store
 indexing_searching/output
-reranking/output
+output
 data/glove.42B.300d.txt
 
 # Byte-compiled / optimized / DLL files
