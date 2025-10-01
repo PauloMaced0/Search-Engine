@@ -1,6 +1,6 @@
 import json
 import math
-from typing import Dict
+from typing import List, Set
 
 def compute_dcg(relevances) -> float:
     """Compute DCG given a list of relevance scores."""
@@ -13,12 +13,12 @@ def compute_dcg(relevances) -> float:
             dcg += rel / math.log2(position)
     return dcg
 
-def compute_idcg(relevances):
+def compute_idcg(relevances) -> float:
     """Compute IDCG by sorting the relevance scores in descending order."""
     sorted_relevances = sorted(relevances, reverse=True)
     return compute_dcg(sorted_relevances)
 
-def compute_ndcg_at_k(retrieved_docs, gold_docs, k=10):
+def compute_ndcg_at_k(retrieved_docs, gold_docs, k=10) -> float:
     """Compute nDCG@k for a single query."""
     relevances = []
     for doc_id in retrieved_docs[:k]:
@@ -38,7 +38,7 @@ def compute_ndcg_at_k(retrieved_docs, gold_docs, k=10):
         return 0.0
     return dcg / idcg
 
-def extract_query_id(entry):
+def extract_query_id(entry) -> str:
     """Extract query_id from an entry, handling different field names."""
     if 'query_id' in entry:
         return entry['query_id']
@@ -47,7 +47,7 @@ def extract_query_id(entry):
     else:
         raise KeyError("query_id or id not found in entry.")
 
-def extract_retrieved_docs(entry):
+def extract_retrieved_docs(entry) -> List[str]:
     """Extract retrieved document IDs, handling different formats."""
     if 'retrieved_documents' not in entry:
         raise KeyError("retrieved_documents not found in entry.")
@@ -69,7 +69,7 @@ def extract_retrieved_docs(entry):
     else:
         raise TypeError("retrieved_documents should be a list.")
 
-def extract_gold_docs(question_entry):
+def extract_gold_docs(question_entry) -> Set[str]:
     """Extract goldstandard_documents from a question entry."""
     if 'goldstandard_documents' in question_entry:
         gold_docs = question_entry['goldstandard_documents']
