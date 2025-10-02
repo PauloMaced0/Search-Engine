@@ -5,7 +5,7 @@
 This Information Retrieval System allows users to index a corpus of documents and perform searches using a BM25 ranking model. The system is designed for processing large datasets efficiently by utilizing a SPIMI (Single Pass In-Memory Indexing) indexing technique.
 
 ## Installation
-To set up the Information Retrieval System, clone the repository and install the required dependencies for each subdirectory (`indexing_searching` and `reranking`):
+To set up the Information Retrieval System, clone the repository and install the required dependencies.
 
 ```bash
 git clone <repository-url>
