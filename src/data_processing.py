@@ -158,7 +158,8 @@ def index_documents(
 
     # Merge all partials
     merged_path = os.path.join(output_dir, 'merged_index.msgpack')
-    _merge_partial_indexes(output_dir, len(partial_files), merged_path, num_workers=num_workers)
+    _merge_partial_indexes(output_dir, len(partial_files), merged_path)
+    # _merge_partial_indexes(output_dir, len(partial_files), merged_path, num_workers=num_workers)
     # """
     # Index documents from a corpus using SPIMI algorithm.
     # 
