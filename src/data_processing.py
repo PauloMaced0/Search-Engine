@@ -290,7 +290,7 @@ def _merge_partial_indexes(
     num_batches: int,
     merged_path: str,
     chunk_size: int = 5,
-    num_workers: int = 0
+    # num_workers: int = 0
 ) -> None:
     """
     Hierarchical merge of many partial index files.
@@ -298,9 +298,6 @@ def _merge_partial_indexes(
     - Merges each chunk into an intermediate file
     - Repeats until only one file remains
     """
-    if num_workers < 1:
-        num_workers = max(1, cpu_count() - 1)
-
     round_num = 0
     files = [os.path.join(output_dir, f'partial_index_{i}.msgpack') for i in range(num_batches)]
 
@@ -308,20 +305,49 @@ def _merge_partial_indexes(
         round_num += 1
         print(f"=== Merge Round {round_num}, {len(files)} files ===")
 
-        tasks = []
+        new_files = []
         for i in range(0, len(files), chunk_size):
             chunk = files[i:i+chunk_size]
             merged_file = os.path.join(output_dir, f"intermediate_round{round_num}_{i//chunk_size}.msgpack")
-            tasks.append((chunk, merged_file))
+            _merge_partial_files(chunk, merged_file)
+            new_files.append(merged_file)
 
-        # Run merges in parallel
-        with Pool(processes=num_workers) as pool:
-            new_files = pool.starmap(_merge_partial_files, tasks)
+        # Replace old list with intermediates for next round
+        files = new_files
 
-        files = new_files  # intermediates become inputs for next round
-
+    # Final result
     os.rename(files[0], merged_path)
     print(f"Final merged index saved to: {merged_path}")
+    # """
+    # Hierarchical merge of many partial index files.
+    # - Groups files into chunks of size `chunk_size`
+    # - Merges each chunk into an intermediate file
+    # - Repeats until only one file remains
+    # """
+    # if num_workers < 1:
+    #     num_workers = max(1, cpu_count() - 1)
+    #
+    # round_num = 0
+    # files = [os.path.join(output_dir, f'partial_index_{i}.msgpack') for i in range(num_batches)]
+    #
+    # while len(files) > 1:
+    #     round_num += 1
+    #     print(f"=== Merge Round {round_num}, {len(files)} files ===")
+    #
+    #     tasks = []
+    #     for i in range(0, len(files), chunk_size):
+    #         chunk = files[i:i+chunk_size]
+    #         merged_file = os.path.join(output_dir, f"intermediate_round{round_num}_{i//chunk_size}.msgpack")
+    #         tasks.append((chunk, merged_file))
+    #
+    #     # Run merges in parallel
+    #     with Pool(processes=num_workers) as pool:
+    #         new_files = pool.starmap(_merge_partial_files, tasks)
+    #
+    #     files = new_files  # intermediates become inputs for next round
+    #
+    # os.rename(files[0], merged_path)
+    # print(f"Final merged index saved to: {merged_path}")
 
 def load_tokenizer_config(config_path: str) -> Dict:
     """
