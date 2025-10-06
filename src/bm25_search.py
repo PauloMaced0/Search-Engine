@@ -137,16 +137,16 @@ def search(
         List of (document_id, score) tuples sorted by relevance
     """
     # Import tokenization function
-    from .data_processing import tokenize_text
+    from .tokenizer import Tokenizer
     
-    # Tokenize query using the same configuration as indexing
-    query_tokens = tokenize_text(
-        query,
-        min_token_length=tokenizer_config.get('min_token_length', 3),
-        lowercase=tokenizer_config.get('lowercase', True),
-        stem=tokenizer_config.get('stem', False),
-        stopwords=set(tokenizer_config.get('stopwords', [])) if tokenizer_config.get('stopwords') else None
+    tokenizer = Tokenizer(
+        tokenizer_config.get('min_token_length', 3),
+        tokenizer_config.get('lowercase', True),
+        tokenizer_config.get('stem', False),
+        set(tokenizer_config.get('stopwords', [])) if tokenizer_config.get('stopwords') else None
     )
+    # Tokenize query using the same configuration as indexing
+    query_tokens = tokenizer.tokenize(query)
     
     # Get candidate documents
     candidates = get_candidate_documents(query_tokens, index)
