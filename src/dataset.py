@@ -16,15 +16,14 @@ class PointWiseDataset(Dataset):
         "label": float (if return_label=True)
     }
     """
-    def __init__(self, questions_file, bm25_ranked_file, corpus_file, tokenizer, return_label=False):
+    def __init__(self, questions_file, bm25_ranked_file, corpus_file, tokenizer):
         super().__init__()
         self.tokenizer = tokenizer
-        self.return_label = return_label
 
         self.questions = load_questions(questions_file)
 
         # Load gold standard if labels are needed
-        self.gold_data = _load_gold_standard(questions_file) if return_label else {}
+        self.gold_data = _load_gold_standard(questions_file)
 
         # Create a flat list of (question_id, document_id) pairs
         needed_doc_ids = set()
@@ -57,17 +56,16 @@ class PointWiseDataset(Dataset):
         question_token_ids = self.tokenizer(question_text)
         document_token_ids = self.tokenizer(document_text)
 
+        gold_docs = self.gold_data.get(qid, {}).get("goldstandard_documents", set())
+        label = 1.0 if docid in gold_docs else 0.0
+
         sample = {
             "query_id": qid,
             "document_id": docid,
             "question_token_ids": question_token_ids,
-            "document_token_ids": document_token_ids
+            "document_token_ids": document_token_ids,
+            "label": label
         }
-
-        if self.return_label:
-            gold_docs = self.gold_data.get(qid, {}).get("goldstandard_documents", set())
-            label = 1.0 if docid in gold_docs else 0.0
-            sample["label"] = label
 
         return sample
 
