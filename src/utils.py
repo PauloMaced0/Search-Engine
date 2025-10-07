@@ -7,7 +7,6 @@ import numpy as np
 import os
 import msgpack
 from typing import Dict
-from torch.nn.utils.rnn import pad_sequence
 
 def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300) -> torch.Tensor:
     """
@@ -36,6 +35,12 @@ def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_doc
     # Retrieve the pad token ID from the tokenizer
     pad_token_id = tokenizer.token_to_id["<PAD>"]
 
+    def pad_to_fixed_length(seq, max_len):
+        seq = seq[:max_len]
+        if len(seq) < max_len:
+            seq += [pad_token_id] * (max_len - len(seq))
+        return seq
+
     def collate_fn(batch):
         """
         Args:
@@ -49,33 +54,23 @@ def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_doc
                 - "document_id": List of document IDs
         """
 
-        # Extract each field
-        question_ids = [sample["query_id"] for sample in batch]
-        document_ids = [sample["document_id"] for sample in batch]
+        question_ids = [s["query_id"] for s in batch]
+        document_ids = [s["document_id"] for s in batch]
 
-        query_ids = [sample["question_token_ids"] for sample in batch]
-        doc_ids = [sample["document_token_ids"] for sample in batch]
-        
-        # Truncate sequences to max lengths
-        query_ids = [q[:max_number_of_question_tokens] for q in query_ids]
-        doc_ids = [d[:max_number_of_document_tokens] for d in doc_ids]
-        
-        # Convert to tensors
-        query_tensors = [torch.tensor(q, dtype=torch.long) for q in query_ids]
-        doc_tensors = [torch.tensor(d, dtype=torch.long) for d in doc_ids]
+        query_seqs = [pad_to_fixed_length(s["question_token_ids"], max_number_of_question_tokens) for s in batch]
+        doc_seqs   = [pad_to_fixed_length(s["document_token_ids"], max_number_of_document_tokens) for s in batch]
+        labels     = [s["label"] for s in batch]
 
-        # Pad sequences to the specified max length
-        padded_questions = pad_sequence(query_tensors, batch_first=True, padding_value=pad_token_id)
-        padded_documents = pad_sequence(doc_tensors, batch_first=True, padding_value=pad_token_id)
+        query_tensor = torch.tensor(query_seqs, dtype=torch.long)
+        doc_tensor   = torch.tensor(doc_seqs, dtype=torch.long)
+        label_tensor = torch.tensor(labels, dtype=torch.float)
 
-        labels = torch.tensor([sample.get("label", -1) for sample in batch], dtype=torch.float)
-        
         return {
-            "question_token_ids": padded_questions,
-            "document_token_ids": padded_documents,
+            "question_token_ids": query_tensor,
+            "document_token_ids": doc_tensor,
             "query_ids": question_ids,
             "document_ids": document_ids,
-            "label": labels
+            "label": label_tensor 
         }
 
     return collate_fn
@@ -100,6 +95,8 @@ def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_
     gold_data = _load_gold_standard(questions_file)
     ranked_data = _load_ranked_results(ranked_file)
     corpus_map = _load_corpus(corpus_file)
+
+    random.seed(42)
 
     all_doc_texts = []
     for qid, qdata in gold_data.items():
