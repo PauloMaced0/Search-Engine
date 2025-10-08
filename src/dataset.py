@@ -1,71 +1,64 @@
-import ujson
-from typing import Dict
+import random
 from torch.utils.data import Dataset
-from .utils import _load_gold_standard, _load_ranked_results, load_questions
+from .utils import _load_gold_standard, _load_ranked_results, _load_corpus, load_questions
 
 class PointWiseDataset(Dataset):
-    """
-    A dataset for (query, document) pairs, with optional relevance labels.
-
-    Each item is a dict:
-    {
-        "query_id": str,
-        "document_id": str,
-        "question_token_ids": List[str],
-        "document_token_ids": List[str],
-        "label": float (if return_label=True)
-    }
-    """
-    def __init__(self, questions_file, bm25_ranked_file, corpus_file, tokenizer):
+    def __init__(self, 
+                 questions_file, 
+                 bm25_ranked_file, 
+                 corpus_file, 
+                 tokenizer, 
+                 negative_ratio=2,
+                 use_negative_sampling: bool = False
+                 ):
         super().__init__()
         self.tokenizer = tokenizer
+        self.negative_ratio = negative_ratio
 
         self.questions = load_questions(questions_file)
-
-        # Load gold standard if labels are needed
         self.gold_data = _load_gold_standard(questions_file)
+        ranked_results = _load_ranked_results(bm25_ranked_file)
+        corpus_map = _load_corpus(corpus_file)
 
-        # Create a flat list of (question_id, document_id) pairs
-        needed_doc_ids = set()
         self.data = []
-        for query_id, docs in _load_ranked_results(bm25_ranked_file).items():
-            for doc_id in docs:
-                needed_doc_ids.add(doc_id)
-                self.data.append((query_id, doc_id))
 
-        self.corpus = {}
-        with open(corpus_file, 'r') as cf:
-            for line in cf:
-                doc = ujson.loads(line.strip())
-                doc_id, doc_text = doc["doc_id"], doc["text"]
-                if doc_id in needed_doc_ids:
-                    self.corpus[doc_id] = doc_text
+        random.seed(42)
 
-    def __len__(self) -> int:
+        for qid, ranked_docs in ranked_results.items():
+            gold_docs = self.gold_data.get(qid, {}).get("goldstandard_documents", set())
+
+            positives = [doc_id for doc_id in ranked_docs if doc_id in gold_docs]
+            negatives = [doc_id for doc_id in ranked_docs if doc_id not in gold_docs]
+
+            # Keep all positives
+            for doc_id in positives:
+                self.data.append((qid, doc_id, 1.0))
+
+            # Randomly sample negatives at 1:2 ratio
+            if positives:
+                if use_negative_sampling:
+                    num_neg_needed = min(len(negatives), len(positives) * self.negative_ratio)
+                    neg_samples = random.sample(negatives, num_neg_needed)
+                else:
+                    neg_samples = negatives
+
+                for doc_id in neg_samples:
+                    self.data.append((qid, doc_id, 0.0))
+
+        # Load corpus only for the needed documents
+        self.corpus = {doc_id: corpus_map[doc_id] for _, doc_id, _ in self.data}
+
+    def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx) -> Dict[str, str]:
-        # Get the query_id and document_id from the stored pairs
-        qid, docid = self.data[idx]
-
-        # Retrieve the question text
+    def __getitem__(self, idx):
+        qid, docid, label = self.data[idx]
         question_text = self.questions[qid]
         document_text = self.corpus[docid]
-
-        # Tokenize question and document
-        question_token_ids = self.tokenizer(question_text)
-        document_token_ids = self.tokenizer(document_text)
-
-        gold_docs = self.gold_data.get(qid, {}).get("goldstandard_documents", set())
-        label = 1.0 if docid in gold_docs else 0.0
-
-        sample = {
+        return {
             "query_id": qid,
             "document_id": docid,
-            "question_token_ids": question_token_ids,
-            "document_token_ids": document_token_ids,
+            "question_token_ids": self.tokenizer(question_text),
+            "document_token_ids": self.tokenizer(document_text),
             "label": label
         }
-
-        return sample
-
