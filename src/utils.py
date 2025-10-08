@@ -96,7 +96,7 @@ def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_
     ranked_data = _load_ranked_results(ranked_file)
     corpus_map = _load_corpus(corpus_file)
 
-    random.seed(42)
+    # random.seed(42)
 
     all_doc_texts = []
     for qid, qdata in gold_data.items():
@@ -108,10 +108,11 @@ def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_
             continue
 
         negatives = [d for d in retrieved_docs if d not in gold_docs]
-        n_neg = min(len(negatives), negative_sample_multiplier * len(positives))
-        sampled_negatives = random.sample(negatives, n_neg) if n_neg else []
+        # n_neg = min(len(negatives), negative_sample_multiplier * len(positives))
+        # sampled_negatives = random.sample(negatives, n_neg) if n_neg else []
 
-        for doc_id in positives + sampled_negatives:
+        # for doc_id in positives + sampled_negatives:
+        for doc_id in positives + negatives:
             if doc_id in corpus_map:
                 all_doc_texts.append(corpus_map[doc_id])
 
