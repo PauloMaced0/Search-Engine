@@ -11,7 +11,7 @@ class PointWiseDataset(Dataset):
         tokenizer,
         mode: str = "train",  # "train" or "valid"
         negative_ratio: int = 2,
-        include_random_negatives: bool = False,
+        include_random_negatives: bool = True,
         random_negatives_ratio: float = 0.5,  # fraction of negatives that are random
     ):
         """
