@@ -79,7 +79,7 @@ def extract_gold_docs(question_entry) -> Set[str]:
     else:
         raise KeyError("goldstandard_documents not found in question entry.")
 
-def compute_average_ndcg(questions_file_path, results_file_path, k=10) -> float:
+def compute_average_ndcg(questions_file_path, results_file_path, k=10, print_out=True) -> float:
     """Compute average nDCG@k over all queries."""
     # Load gold standard relevance judgements
     gold_data = {}
@@ -115,10 +115,12 @@ def compute_average_ndcg(questions_file_path, results_file_path, k=10) -> float:
         retrieved_docs = results_data.get(query_id, [])
         ndcg = compute_ndcg_at_k(retrieved_docs, gold_docs, k)
         ndcg_scores.append(ndcg)
-        print(f"Query ID: {query_id}, nDCG@{k}: {ndcg:.4f}")
+        if print_out: 
+            print(f"Query ID: {query_id}, nDCG@{k}: {ndcg:.4f}")
 
     # Compute average nDCG@k
     average_ndcg = sum(ndcg_scores) / len(ndcg_scores) if ndcg_scores else 0.0
-    print(f"\nAverage nDCG@{k}: {average_ndcg:.4f}")
+    if print_out: 
+        print(f"\nAverage nDCG@{k}: {average_ndcg:.4f}")
 
     return average_ndcg
