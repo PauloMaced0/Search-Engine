@@ -1,7 +1,5 @@
-import re
 import torch
 import torch.nn as nn
-from typing import List
 
 class CNNInteractionBasedModel(nn.Module):
     def __init__(self, vocab_size, pretrained_embeddings=None, embedding_dim=300, num_filters=32, kernel_size=3, dropout=0.3):
