@@ -62,11 +62,7 @@ This notebook handles **training the reranking model**:
 - Implements a **pointwise reranking approach** (positive/negative examples).
 - Trains a neural model (CNN-based) to distinguish relevant from non-relevant documents.
 - Saves the trained model for later inference.
-
-### 3. `full_pipeline_demo.ipynb`
-This notebook puts everything together into a **complete pipeline**:
-- Loads a pretrained reranking model.
-- Applies it to BM25 results to **rerank documents**.
+- Loads the best pretrained model.
 - Evaluates reranked results against the baseline (improved nDCG).
 
 ---
