@@ -28,7 +28,7 @@ class PointWiseDataset(Dataset):
             random_negatives_ratio: fraction of negatives that are random
         """
         super().__init__()
-        assert mode in {"train", "valid"}, "split must be 'train' or 'valid'"
+        assert mode in {"train", "valid"}, "mode must be 'train' or 'valid'"
         self.tokenizer = tokenizer
         self.split = mode
         self.negative_ratio = negative_ratio
