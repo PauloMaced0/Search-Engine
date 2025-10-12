@@ -76,7 +76,7 @@ def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_doc
             d_tokens = sample["document_token_ids"]
 
             # Combine [query] + [SEP] + [doc]
-            combined = pad_to_fixed_length(q_tokens + [sep_token_id] + d_tokens, max_number_of_question_tokens + max_number_of_question_tokens) 
+            combined = pad_to_fixed_length(q_tokens + [sep_token_id] + d_tokens, max_number_of_question_tokens + max_number_of_document_tokens + 1) 
 
             sequences.append(combined)
             labels.append(sample["label"])
