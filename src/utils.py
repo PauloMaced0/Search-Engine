@@ -108,30 +108,12 @@ def get_questions(questions_file):
 
     return questions
 
-def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_multiplier=2):
+def get_all_doc_texts(corpus_file):
     """
-    Return a list of document texts (both positive and negative) for all queries combined.
+    Return all document texts from the corpus file.
     """
-    gold_data = _load_gold_standard(questions_file)
-    ranked_data = _load_ranked_results(ranked_file)
     corpus_map = _load_corpus(corpus_file)
-
-    all_doc_texts = []
-    for qid, qdata in gold_data.items():
-        gold_docs = qdata["goldstandard_documents"]
-        retrieved_docs = ranked_data.get(qid, [])
-
-        positives = [d for d in retrieved_docs if d in gold_docs]
-        if not positives:
-            continue
-
-        negatives = [d for d in retrieved_docs if d not in gold_docs]
-
-        for doc_id in positives + negatives:
-            if doc_id in corpus_map:
-                all_doc_texts.append(corpus_map[doc_id])
-
-    return all_doc_texts
+    return list(corpus_map.values())
 
 def _load_gold_standard(questions_file):
     """
