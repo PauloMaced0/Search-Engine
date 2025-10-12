@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class CNNCrossEncoder(nn.Module):
-    def __init__(self, vocab_size, pretrained_embeddings=None, embedding_dim=300, num_filters=64, kernel_size=3, dropout=0.3):
+    def __init__(self, vocab_size, pretrained_embeddings=None, embedding_dim=300, num_filters=64, kernel_size=9, dropout=0.3):
         super().__init__()
 
         # Embedding layer (shared for query and doc)
