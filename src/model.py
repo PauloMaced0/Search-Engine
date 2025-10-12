@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class DeepCNNCrossEncoder(nn.Module):
-    def __init__(self, vocab_size, embedding_dim=300, num_filters=128, kernel_sizes=[5, 7, 9], num_layers=3, dropout=0.3, pretrained_embeddings=None):
+    def __init__(self, vocab_size, embedding_dim=300, num_filters=256, kernel_sizes=[5, 7, 9, 15], num_layers=4, dropout=0.3, pretrained_embeddings=None):
         super().__init__()
 
         # Embedding layer
