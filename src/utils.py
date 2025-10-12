@@ -8,32 +8,45 @@ import os
 import msgpack
 from typing import Dict
 
-def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300) -> torch.Tensor:
+def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300, lowercase=True):
     """
-    Load pretrained embeddings into a matrix aligned with the tokenizer's vocab.
-    Unknown words get random vectors, PAD gets zeros.
+    Load pretrained GloVe embeddings aligned with tokenizer's vocabulary.
+    Unknown words get random vectors, PAD gets zeros, and <SEP> gets a random vector.
     """
-    rng = np.random.default_rng(seed=42)  # reproducibility
-    embedding_matrix = rng.uniform(-0.05, 0.05, (tokenizer.vocab_size, embedding_dim)).astype(np.float32)
+    vocab = tokenizer.token_to_id
+    vocab_size = len(vocab)
 
-    # Create a set of tokens in your vocabulary for quick lookup
-    vocab_tokens = set(tokenizer.token_to_id.keys())
+    rng = np.random.default_rng(seed=42)
+    embedding_matrix = rng.uniform(-0.05, 0.05, (vocab_size, embedding_dim)).astype(np.float32)
 
-    embedding_matrix[tokenizer.token_to_id["<PAD>"]] = np.zeros(embedding_dim, dtype=np.float32)
-    
-    # Load embeddings
-    with open(embedding_path, 'r', encoding='utf-8') as f:
+    # Special tokens
+    if "<PAD>" in vocab:
+        embedding_matrix[vocab["<PAD>"]] = np.zeros(embedding_dim, dtype=np.float32)
+    if "<SEP>" in vocab:
+        embedding_matrix[vocab["<SEP>"]] = rng.uniform(-0.05, 0.05, embedding_dim)
+
+    found = 0
+
+    with open(embedding_path, "r", encoding="utf-8") as f:
         for line in f:
-            values = line.strip().split()
-            word = values[0]
-            if word in vocab_tokens:
-                embedding_matrix[tokenizer.token_to_id[word]] = np.asarray(values[1:], dtype=np.float32)
+            parts = line.rstrip().split(" ")
+            if len(parts) <= embedding_dim:
+                continue  # skip malformed lines
+            word = parts[0].lower() if lowercase else parts[0]
+            if word in vocab:
+                embedding_matrix[vocab[word]] = np.asarray(parts[1:], dtype=np.float32)
+                found += 1
+                if found == vocab_size:
+                    break
+
+    print(f"Loaded {found}/{vocab_size} words from GloVe ({found/vocab_size:.2%} coverage)")
 
     return torch.tensor(embedding_matrix, dtype=torch.float32)
 
 def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_document_tokens):
     # Retrieve the pad token ID from the tokenizer
     pad_token_id = tokenizer.token_to_id["<PAD>"]
+    sep_token_id = tokenizer.token_to_id["<SEP>"]
 
     def pad_to_fixed_length(seq, max_len):
         seq = seq[:max_len]
@@ -53,24 +66,31 @@ def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_doc
                 - "question_id": List of question IDs
                 - "document_id": List of document IDs
         """
+        sequences = []
+        labels = []
+        qids = []
+        dids = []
 
-        question_ids = [s["query_id"] for s in batch]
-        document_ids = [s["document_id"] for s in batch]
+        for sample in batch:
+            q_tokens = sample["question_token_ids"]
+            d_tokens = sample["document_token_ids"]
 
-        query_seqs = [pad_to_fixed_length(s["question_token_ids"], max_number_of_question_tokens) for s in batch]
-        doc_seqs   = [pad_to_fixed_length(s["document_token_ids"], max_number_of_document_tokens) for s in batch]
-        labels     = [s["label"] for s in batch]
+            # Combine [query] + [SEP] + [doc]
+            combined = pad_to_fixed_length(q_tokens + [sep_token_id] + d_tokens, max_number_of_question_tokens + max_number_of_question_tokens) 
 
-        query_tensor = torch.tensor(query_seqs, dtype=torch.long)
-        doc_tensor   = torch.tensor(doc_seqs, dtype=torch.long)
+            sequences.append(combined)
+            labels.append(sample["label"])
+            qids.append(sample["query_id"])
+            dids.append(sample["document_id"])
+
+        seq_tensor = torch.tensor(sequences, dtype=torch.long)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
-            "question_token_ids": query_tensor,
-            "document_token_ids": doc_tensor,
-            "query_ids": question_ids,
-            "document_ids": document_ids,
-            "label": label_tensor 
+            "joint_input": seq_tensor,
+            "label": label_tensor,
+            "query_ids": qids,
+            "document_ids": dids,
         }
 
     return collate_fn
@@ -96,8 +116,6 @@ def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_
     ranked_data = _load_ranked_results(ranked_file)
     corpus_map = _load_corpus(corpus_file)
 
-    # random.seed(42)
-
     all_doc_texts = []
     for qid, qdata in gold_data.items():
         gold_docs = qdata["goldstandard_documents"]
@@ -108,10 +126,7 @@ def get_all_doc_texts(questions_file, ranked_file, corpus_file, negative_sample_
             continue
 
         negatives = [d for d in retrieved_docs if d not in gold_docs]
-        # n_neg = min(len(negatives), negative_sample_multiplier * len(positives))
-        # sampled_negatives = random.sample(negatives, n_neg) if n_neg else []
 
-        # for doc_id in positives + sampled_negatives:
         for doc_id in positives + negatives:
             if doc_id in corpus_map:
                 all_doc_texts.append(corpus_map[doc_id])
