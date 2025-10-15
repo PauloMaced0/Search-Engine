@@ -10,8 +10,8 @@ class Tokenizer:
         stem: bool = False,
         stopwords: Optional[Set[str]] = None
     ):
-        self.token_to_id = {"<PAD>": 0, "<SEP>": 1}
-        self.vocab_size = 2
+        self.token_to_id = {"<PAD>": 0}
+        self.vocab_size = 1
 
         # Config
         self.min_token_length = min_token_length
