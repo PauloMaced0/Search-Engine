@@ -2,81 +2,59 @@
 
 import torch
 import ujson
-import numpy as np
 import os
 import msgpack
 from typing import Dict
+from tqdm import tqdm
 
-def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300, lowercase=True):
+def compute_dynamic_max_len(questions_file, bm25_ranked_file, corpus_file, tokenizer):
     """
-    Load pretrained GloVe embeddings aligned with tokenizer's vocabulary.
-    Unknown words get random vectors, PAD gets zeros, and <SEP> gets a random vector.
+    Computes the max tokenized length of question+document pairs in your corpus.
+
+    Args:
+        questions_file: path to questions JSONL
+        bm25_ranked_file: path to BM25 ranked results JSONL
+        corpus_file: path to corpus JSONL
+        tokenizer: HuggingFace tokenizer (e.g. BertTokenizer)
+        sample_size: optional number of pairs to sample (for large datasets)
+        percentile: upper percentile to clip max length (default: 95)
     """
-    vocab = tokenizer.token_to_id
-    vocab_size = len(vocab)
+    from .utils import load_questions, load_corpus, load_ranked_results
 
-    rng = np.random.default_rng(seed=42)
-    embedding_matrix = rng.uniform(-0.05, 0.05, (vocab_size, embedding_dim)).astype(np.float32)
+    questions = load_questions(questions_file)
+    corpus = load_corpus(corpus_file)
+    ranked = load_ranked_results(bm25_ranked_file)
 
-    # Special tokens
-    if "<PAD>" in vocab:
-        embedding_matrix[vocab["<PAD>"]] = np.zeros(embedding_dim, dtype=np.float32)
+    pairs = []
 
-    found = 0
+    max_len = 0
 
-    with open(embedding_path, "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.rstrip().split(" ")
-            if len(parts) <= embedding_dim:
-                continue  # skip malformed lines
-            word = parts[0].lower() if lowercase else parts[0]
-            if word in vocab:
-                embedding_matrix[vocab[word]] = np.asarray(parts[1:], dtype=np.float32)
-                found += 1
-                if found == vocab_size:
-                    break
+    # Collect all (question, doc) pairs
+    for qid, docs in ranked.items():
+        for did in docs:
+            if qid in questions and did in corpus:
+                pairs.append((questions[qid], corpus[did]))
 
-    print(f"Loaded {found}/{vocab_size} words from GloVe ({found/vocab_size:.2%} coverage)")
+    for qtext, dtext in tqdm(pairs, desc="Computing token lengths"):
+        tokens = tokenizer(qtext + dtext)
+        if max_len < len(tokens):
+            max_len = len(tokens)
 
-    return torch.tensor(embedding_matrix, dtype=torch.float32)
+    return max_len + 3
 
-def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_document_tokens):
-    # Retrieve the pad token ID from the tokenizer
-    pad_token_id = tokenizer.token_to_id["<PAD>"]
-
-    def pad_to_fixed_length(seq, max_len):
-        seq = seq[:max_len]
-        if len(seq) < max_len:
-            seq += [pad_token_id] * (max_len - len(seq))
-        return seq
-
+def build_collate_fn():
     def collate_fn(batch):
-        """
-        Args:
-            batch (List[Dict]): A list of samples from the dataset.
-        
-        Returns:
-            A dictionary containing:
-                - "question_token_ids": Tensor of shape (batch_size, max_number_of_question_tokens)
-                - "document_token_ids": Tensor of shape (batch_size, max_number_of_document_tokens)
-                - "question_id": List of question IDs
-                - "document_id": List of document IDs
-        """
-
         question_ids = [s["query_id"] for s in batch]
         document_ids = [s["document_id"] for s in batch]
 
-        query_seqs = [pad_to_fixed_length(s["question_token_ids"], max_number_of_question_tokens) for s in batch]
-        doc_seqs   = [pad_to_fixed_length(s["document_token_ids"], max_number_of_document_tokens) for s in batch]
-        labels     = [s["label"] for s in batch]
+        input_seqs   = [s["input_ids"] for s in batch]
+        labels       = [s["label"] for s in batch]
 
-        query_tensor = torch.tensor(query_seqs, dtype=torch.long)
-        doc_tensor   = torch.tensor(doc_seqs, dtype=torch.long)
+        input_tensor  = torch.tensor(input_seqs, dtype=torch.long)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
-            "question_token_ids": query_tensor,
-            "document_token_ids": doc_tensor,
+            "input_token_ids": input_tensor,
             "query_ids": question_ids,
             "document_ids": document_ids,
             "label": label_tensor 

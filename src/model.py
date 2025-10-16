@@ -1,52 +1,23 @@
-import torch
 import torch.nn as nn
+from transformers import BertModel
 
-class CNNInteractionModel(nn.Module):
-    def __init__(self, vocab_size, embedding_dim=300, num_filters=32, kernel_size=3, dropout=0.3, pretrained_embeddings=None):
+class BertCrossEncoder(nn.Module):
+    def __init__(self, vocab_size, pretrained_model="bert-base-uncased", dropout=0.3):
         super().__init__()
-
-        # Embedding layer
-        if pretrained_embeddings is not None:
-            self.embedding = nn.Embedding.from_pretrained(pretrained_embeddings, freeze=False, padding_idx=0)
-        else:
-            self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-
-        # Convolution layer to process interaction matrix
-        self.conv = nn.Conv2d(1, out_channels=num_filters, kernel_size=(kernel_size, kernel_size))
-
-        self.activation = nn.ReLU()
-
-        self.pool = nn.AdaptiveMaxPool2d((1, 1))
-
+        self.bert = BertModel.from_pretrained(pretrained_model)
+        self.bert.resize_token_embeddings(vocab_size)
         self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(self.bert.config.hidden_size, 1)
 
-        self.fc = nn.Linear(num_filters, 1)
-
-        # Sigmoid to turn logits into probabilities
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, query, document):
+    def forward(self, input_ids, attention_mask):
         """
         Args:
-        - query (torch.Tensor): Tensor of query token IDs (batch_size, query_len)
-        - document (torch.Tensor): Tensor of document token IDs (batch_size, doc_len)
-        
+            input_ids: Tensor (B, L)
+            attention_mask: Tensor (B, L)
         Returns:
-        - prob (torch.Tensor): Relevance score (batch_size,)
+            logits: Tensor (B,)
         """
-        # Embed 
-        query_embed = self.embedding(query)  # (B, Q, E)
-        document_embed = self.embedding(document)  # (B, D, E)
-
-        # Compute interaction matrix
-        # Interaction matrix shape: (B, Q, D)
-        interaction_matrix = torch.matmul(query_embed, document_embed.transpose(1, 2))
-
-        # Convolution
-        conv_out = self.activation(self.conv(interaction_matrix.unsqueeze(1)))  # (B, F, h, w)
-        pooled = self.pool(conv_out).squeeze(-1).squeeze(-1)  # (B, F)
-
-        # Dropout + FC
-        logits = self.fc(self.dropout(pooled)).squeeze(-1)  # (B,)
-
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        cls_embedding = outputs.last_hidden_state[:, 0, :]  # [CLS]
+        logits = self.classifier(self.dropout(cls_embedding)).squeeze(-1)
         return logits

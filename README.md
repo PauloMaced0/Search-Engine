@@ -34,7 +34,7 @@ Some of the large dataset files in the `data/` folder are tracked with **Git LFS
 
 #### Steps to download:
 
-1. **Install Git LFS** (only once per machine):
+1. **Install Git LFS**:
 
 ```bash
 git lfs install
@@ -64,6 +64,10 @@ This notebook handles **training the reranking model**:
 - Saves the trained model for later inference.
 - Loads the best pretrained model.
 - Evaluates reranked results against the baseline (improved nDCG).
+
+> [!NOTE]:
+> Since there isn’t enough data to train a simple CNN-based interaction model effectively, we use a **pretrained BERT** model and fine-tune it instead.
+> This choice is motivated by the nature of the dataset (check `data/questions.jsonl`, if you want to know how queries look like), it contains many domain-specific terms in both queries and documents (which is also why **BM25** performs well). These characteristics make it difficult for a model trained from scratch to learn the language patterns and generalize effectively.
 
 ---
 
