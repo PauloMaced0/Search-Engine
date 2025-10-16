@@ -96,9 +96,9 @@ class PointWiseDataset(Dataset):
         encoding = self.tokenizer(
             question_text,
             document_text,
-            truncation=True,  # Enable truncation
-            max_length=512,   # BERT's max sequence length
-            padding="max_length",  # Pad to max_length
+            truncation="only_sencond",
+            max_length=512,
+            padding="max_length",
             return_tensors="pt"
         )
 
