@@ -5,42 +5,6 @@ import ujson
 import os
 import msgpack
 from typing import Dict
-from tqdm import tqdm
-
-def compute_dynamic_max_len(questions_file, bm25_ranked_file, corpus_file, tokenizer):
-    """
-    Computes the max tokenized length of question+document pairs in your corpus.
-
-    Args:
-        questions_file: path to questions JSONL
-        bm25_ranked_file: path to BM25 ranked results JSONL
-        corpus_file: path to corpus JSONL
-        tokenizer: HuggingFace tokenizer (e.g. BertTokenizer)
-        sample_size: optional number of pairs to sample (for large datasets)
-        percentile: upper percentile to clip max length (default: 95)
-    """
-    from .utils import load_questions, load_corpus, load_ranked_results
-
-    questions = load_questions(questions_file)
-    corpus = load_corpus(corpus_file)
-    ranked = load_ranked_results(bm25_ranked_file)
-
-    pairs = []
-
-    max_len = 0
-
-    # Collect all (question, doc) pairs
-    for qid, docs in ranked.items():
-        for did in docs:
-            if qid in questions and did in corpus:
-                pairs.append((questions[qid], corpus[did]))
-
-    for qtext, dtext in tqdm(pairs, desc="Computing token lengths"):
-        tokens = tokenizer(qtext + dtext)
-        if max_len < len(tokens):
-            max_len = len(tokens)
-
-    return max_len + 3
 
 def build_collate_fn():
     def collate_fn(batch):
@@ -50,11 +14,10 @@ def build_collate_fn():
         input_seqs   = [s["input_ids"] for s in batch]
         labels       = [s["label"] for s in batch]
 
-        input_tensor  = torch.tensor(input_seqs, dtype=torch.long)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
-            "input_token_ids": input_tensor,
+            "input_token_ids": input_seqs,
             "query_ids": question_ids,
             "document_ids": document_ids,
             "label": label_tensor 
