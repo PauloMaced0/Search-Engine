@@ -12,7 +12,7 @@ class PointWiseDataset(Dataset):
         mode: str = "train",  # "train" or "valid"
         negative_ratio: int = 2,
         include_random_negatives: bool = True,
-        random_negatives_ratio: float = 0.5,  # fraction of negatives that are random
+        random_negatives_ratio: float = 0.25,  # fraction of negatives that are random
     ):
         """
         Flexible dataset for (query, document, label) training and validation.

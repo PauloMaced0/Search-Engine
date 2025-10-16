@@ -1,7 +1,8 @@
+import torch
 import torch.nn as nn
 
-class DeepCNNCrossEncoder(nn.Module):
-    def __init__(self, vocab_size, embedding_dim=300, num_filters=256, kernel_sizes=[5, 7, 9, 15], num_layers=4, dropout=0.3, pretrained_embeddings=None):
+class CNNInteractionModel(nn.Module):
+    def __init__(self, vocab_size, embedding_dim=300, num_filters=32, kernel_size=3, dropout=0.3, pretrained_embeddings=None):
         super().__init__()
 
         # Embedding layer
@@ -10,41 +11,42 @@ class DeepCNNCrossEncoder(nn.Module):
         else:
             self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
 
-        # Convolutional layers
-        self.convs = nn.ModuleList()
-        self.projs = nn.ModuleList()
-
-        for i in range(num_layers):
-            in_ch = embedding_dim if i == 0 else num_filters
-            ks = kernel_sizes[i % len(kernel_sizes)]
-
-            conv = nn.Conv1d(in_channels=in_ch,
-                             out_channels=num_filters,
-                             kernel_size=ks,
-                             padding=ks // 2)
-            self.convs.append(conv)
-
-            # projection only if dimensions differ
-            if in_ch != num_filters:
-                self.projs.append(nn.Conv1d(in_ch, num_filters, kernel_size=1))
-            else:
-                self.projs.append(nn.Identity())
+        # Convolution layer to process interaction matrix
+        self.conv = nn.Conv2d(1, out_channels=num_filters, kernel_size=(kernel_size, kernel_size))
 
         self.activation = nn.ReLU()
-        self.pool = nn.AdaptiveMaxPool1d(1)
+
+        self.pool = nn.AdaptiveMaxPool2d((1, 1))
+
         self.dropout = nn.Dropout(dropout)
+
         self.fc = nn.Linear(num_filters, 1)
 
-    def forward(self, joint_input):
-        x = self.embedding(joint_input)  # (B, L, E)
-        x = x.transpose(1, 2)            # (B, E, L)
+        # Sigmoid to turn logits into probabilities
+        self.sigmoid = nn.Sigmoid()
 
-        # Residual stack
-        for conv, proj in zip(self.convs, self.projs):
-            residual = proj(x)
-            x = self.activation(conv(x))
-            x = x + residual
+    def forward(self, query, document):
+        """
+        Args:
+        - query (torch.Tensor): Tensor of query token IDs (batch_size, query_len)
+        - document (torch.Tensor): Tensor of document token IDs (batch_size, doc_len)
+        
+        Returns:
+        - prob (torch.Tensor): Relevance score (batch_size,)
+        """
+        # Embed 
+        query_embed = self.embedding(query)  # (B, Q, E)
+        document_embed = self.embedding(document)  # (B, D, E)
 
-        x = self.pool(x).squeeze(-1)
-        logits = self.fc(self.dropout(x)).squeeze(-1)
+        # Compute interaction matrix
+        # Interaction matrix shape: (B, Q, D)
+        interaction_matrix = torch.matmul(query_embed, document_embed.transpose(1, 2))
+
+        # Convolution
+        conv_out = self.activation(self.conv(interaction_matrix.unsqueeze(1)))  # (B, F, h, w)
+        pooled = self.pool(conv_out).squeeze(-1).squeeze(-1)  # (B, F)
+
+        # Dropout + FC
+        logits = self.fc(self.dropout(pooled)).squeeze(-1)  # (B,)
+
         return logits

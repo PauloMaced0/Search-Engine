@@ -1,6 +1,5 @@
 # Utility functions
 
-import random
 import torch
 import ujson
 import numpy as np
@@ -22,8 +21,6 @@ def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300, low
     # Special tokens
     if "<PAD>" in vocab:
         embedding_matrix[vocab["<PAD>"]] = np.zeros(embedding_dim, dtype=np.float32)
-    if "<SEP>" in vocab:
-        embedding_matrix[vocab["<SEP>"]] = rng.uniform(-0.05, 0.05, embedding_dim)
 
     found = 0
 
@@ -46,7 +43,6 @@ def load_pretrained_embeddings(embedding_path, tokenizer, embedding_dim=300, low
 def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_document_tokens):
     # Retrieve the pad token ID from the tokenizer
     pad_token_id = tokenizer.token_to_id["<PAD>"]
-    sep_token_id = tokenizer.token_to_id["<SEP>"]
 
     def pad_to_fixed_length(seq, max_len):
         seq = seq[:max_len]
@@ -66,31 +62,24 @@ def build_collate_fn(tokenizer, max_number_of_question_tokens, max_number_of_doc
                 - "question_id": List of question IDs
                 - "document_id": List of document IDs
         """
-        sequences = []
-        labels = []
-        qids = []
-        dids = []
 
-        for sample in batch:
-            q_tokens = sample["question_token_ids"]
-            d_tokens = sample["document_token_ids"]
+        question_ids = [s["query_id"] for s in batch]
+        document_ids = [s["document_id"] for s in batch]
 
-            # Combine [query] + [SEP] + [doc]
-            combined = pad_to_fixed_length(q_tokens + [sep_token_id] + d_tokens, max_number_of_question_tokens + max_number_of_document_tokens + 1) 
+        query_seqs = [pad_to_fixed_length(s["question_token_ids"], max_number_of_question_tokens) for s in batch]
+        doc_seqs   = [pad_to_fixed_length(s["document_token_ids"], max_number_of_document_tokens) for s in batch]
+        labels     = [s["label"] for s in batch]
 
-            sequences.append(combined)
-            labels.append(sample["label"])
-            qids.append(sample["query_id"])
-            dids.append(sample["document_id"])
-
-        seq_tensor = torch.tensor(sequences, dtype=torch.long)
+        query_tensor = torch.tensor(query_seqs, dtype=torch.long)
+        doc_tensor   = torch.tensor(doc_seqs, dtype=torch.long)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
-            "joint_input": seq_tensor,
-            "label": label_tensor,
-            "query_ids": qids,
-            "document_ids": dids,
+            "question_token_ids": query_tensor,
+            "document_token_ids": doc_tensor,
+            "query_ids": question_ids,
+            "document_ids": document_ids,
+            "label": label_tensor 
         }
 
     return collate_fn
@@ -114,56 +103,6 @@ def get_all_doc_texts(corpus_file):
     """
     corpus_map = _load_corpus(corpus_file)
     return list(corpus_map.values())
-
-def _load_gold_standard(questions_file):
-    """
-    Load gold-standard documents from a file with structure:
-    {
-      "question": "Is erenumab effective for trigeminal neuralgia?", 
-      "goldstandard_documents": ["PMID:36113495"], 
-      "query_id": "63f73f1b33942b094c000008"
-    }
-
-    Returns:
-        gold_data: dict mapping query_id -> {
-            "question": question_text,
-            "goldstandard_documents": set_of_doc_ids
-        }
-    """
-    gold_data = {}
-    with open(questions_file, 'r') as f:
-        for line in f:
-            record = ujson.loads(line.strip())
-            qid = record["query_id"]
-            gold_data[qid] = {
-                "question": record["question"],
-                "goldstandard_documents": set(record.get("goldstandard_documents", []))
-            }
-    return gold_data
-
-def _load_ranked_results(ranked_file):
-    """
-    Load BM25 or other ranked results from a file with structure:
-    {
-      "query_id": "55031181e9bde69634000014", 
-      "retrieved_documents": [
-         {"id": "PMID:15617541", "score": 36.2235}, 
-         {"id": "PMID:15829955", "score": 32.1627}, ...
-      ]
-    }
-
-    Returns:
-        ranked_data: dict mapping query_id -> list_of_doc_ids_sorted_by_score
-    """
-    ranked_data = {}
-    with open(ranked_file, 'r') as f:
-        for line in f:
-            record = ujson.loads(line.strip())
-            qid = record["query_id"]
-            # Extract doc_ids and maintain order by score
-            doc_ids = [doc["id"] for doc in record["retrieved_documents"]]
-            ranked_data[qid] = doc_ids
-    return ranked_data
 
 def _load_corpus(corpus_file):
     """
