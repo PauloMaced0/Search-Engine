@@ -96,7 +96,7 @@ class PointWiseDataset(Dataset):
         encoding = self.tokenizer(
             question_text,
             document_text,
-            truncation="only_sencond",
+            truncation="only_second",
             max_length=512,
             padding="max_length",
             return_tensors="pt"
