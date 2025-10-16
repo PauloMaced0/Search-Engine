@@ -1,6 +1,6 @@
 import random
 from torch.utils.data import Dataset
-from .utils import _load_corpus, load_questions
+from .utils import load_corpus, load_questions, load_gold_standard, load_ranked_results 
 
 class PointWiseDataset(Dataset):
     def __init__(
@@ -39,9 +39,9 @@ class PointWiseDataset(Dataset):
 
         # Load data
         self.questions = load_questions(questions_file)
-        self.gold_data = _load_gold_standard(questions_file)
-        ranked_results = _load_ranked_results(bm25_ranked_file)
-        corpus_map = _load_corpus(corpus_file)
+        self.gold_data = load_gold_standard(questions_file)
+        ranked_results = load_ranked_results(bm25_ranked_file)
+        corpus_map = load_corpus(corpus_file)
         all_doc_ids = list(corpus_map.keys())
 
         self.data = []
