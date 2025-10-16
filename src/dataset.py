@@ -1,6 +1,6 @@
 import random
 from torch.utils.data import Dataset
-from .utils import _load_gold_standard, _load_ranked_results, _load_corpus, load_questions
+from .utils import _load_corpus, load_questions
 
 class PointWiseDataset(Dataset):
     def __init__(
