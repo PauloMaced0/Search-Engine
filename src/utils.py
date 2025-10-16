@@ -11,13 +11,14 @@ def build_collate_fn():
         question_ids = [s["query_id"] for s in batch]
         document_ids = [s["document_id"] for s in batch]
 
-        input_seqs   = [s["input_ids"] for s in batch]
+        input_seqs   = [list(s["input_ids"]) for s in batch]
         labels       = [s["label"] for s in batch]
 
+        input_tensor = torch.tensor(input_seqs, dtype=torch.long)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
-            "input_token_ids": input_seqs,
+            "input_token_ids": input_tensor,
             "query_ids": question_ids,
             "document_ids": document_ids,
             "label": label_tensor 
