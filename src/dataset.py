@@ -14,7 +14,6 @@ class PointWiseDataset(Dataset):
         negative_ratio: int = 2,
         include_random_negatives: bool = True,
         random_negatives_ratio: float = 0.25,  # fraction of negatives that are random
-        max_seq_len: int = 512
     ):
         """
         Flexible dataset for (query, document, label) training and validation.
@@ -36,7 +35,6 @@ class PointWiseDataset(Dataset):
         self.negative_ratio = negative_ratio
         self.include_random_negatives = include_random_negatives
         self.random_negatives_ratio = random_negatives_ratio
-        self.max_seq_len = max_seq_len
 
         random.seed(42)
 
@@ -99,8 +97,7 @@ class PointWiseDataset(Dataset):
             question_text,
             document_text,
             truncation=True,
-            max_length=self.max_seq_len,
-            padding="max_length",
+            padding="longest",
             return_tensors="pt"
         )
 
