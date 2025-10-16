@@ -96,15 +96,17 @@ class PointWiseDataset(Dataset):
         encoding = self.tokenizer(
             question_text,
             document_text,
-            truncation=True,
-            padding="longest",
+            truncation=True,  # Enable truncation
+            max_length=512,   # BERT's max sequence length
+            padding="max_length",  # Pad to max_length
             return_tensors="pt"
         )
+
 
         return {
             "query_id": qid,
             "document_id": docid,
-            "input_ids": encoding["input_ids"],
-            "attention_mask": encoding["attention_mask"],
+            "input_ids": encoding["input_ids"].squeeze(0),
+            "attention_mask": encoding["attention_mask"].squeeze(0),
             "label": label,
         }
