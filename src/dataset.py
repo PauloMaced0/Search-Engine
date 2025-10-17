@@ -1,4 +1,5 @@
 import random
+import tqdm
 import torch
 from torch.utils.data import Dataset
 from .utils import load_corpus, load_questions, load_gold_standard, load_ranked_results 
@@ -84,29 +85,31 @@ class PointWiseDataset(Dataset):
         needed_doc_ids = {doc_id for _, doc_id, _ in self.data}
         self.corpus = {doc_id: corpus_map[doc_id] for doc_id in needed_doc_ids}
 
+        self.tokenized_data = []
+        
+        for qid, docid, label in tqdm(self.data, desc="Tokenizing"):
+            question_text = self.questions[qid]
+            document_text = self.corpus[docid]
+
+            encoding = self.tokenizer(
+                question_text,
+                document_text,
+                truncation="only_second",
+                max_length=512,
+                padding="max_length",
+                return_tensors="pt"
+            )
+
+            self.tokenized_data.append({
+                "query_id": qid,
+                "document_id": docid,
+                "input_ids": encoding["input_ids"].squeeze(0),
+                "attention_mask": encoding["attention_mask"].squeeze(0),
+                "label": label,
+            })
+
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        qid, docid, label = self.data[idx]
-        question_text = self.questions[qid]
-        document_text = self.corpus[docid]
-
-        # Concatenate question and document
-        encoding = self.tokenizer(
-            question_text,
-            document_text,
-            truncation="only_second",
-            max_length=512,
-            padding="max_length",
-            return_tensors="pt"
-        )
-
-
-        return {
-            "query_id": qid,
-            "document_id": docid,
-            "input_ids": encoding["input_ids"].squeeze(0),
-            "attention_mask": encoding["attention_mask"].squeeze(0),
-            "label": label,
-        }
+        return self.tokenized_data[idx]
