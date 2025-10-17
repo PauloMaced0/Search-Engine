@@ -15,8 +15,8 @@ def build_collate_fn():
         attention_mask   = [s["attention_mask"] for s in batch]
         labels       = [s["label"] for s in batch]
 
-        input_tensor = torch.tensor(input_seqs, dtype=torch.long)
-        attention_mask = torch.tensor(attention_mask, dtype=torch.int)
+        input_tensor = torch.stack(input_seqs)
+        attention_mask = torch.stack(attention_mask)
         label_tensor = torch.tensor(labels, dtype=torch.float)
 
         return {
