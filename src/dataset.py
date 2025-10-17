@@ -1,5 +1,5 @@
 import random
-import tqdm
+from tqdm import tqdm
 import torch
 from torch.utils.data import Dataset
 from .utils import load_corpus, load_questions, load_gold_standard, load_ranked_results 
