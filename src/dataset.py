@@ -15,6 +15,7 @@ class PointWiseDataset(Dataset):
         negative_ratio: int = 2,
         include_random_negatives: bool = True,
         random_negatives_ratio: float = 0.25,  # fraction of negatives that are random
+        stride = 256
     ):
         """
         Flexible dataset for (query, document, label) training and validation.
@@ -36,6 +37,8 @@ class PointWiseDataset(Dataset):
         self.negative_ratio = negative_ratio
         self.include_random_negatives = include_random_negatives
         self.random_negatives_ratio = random_negatives_ratio
+        self.stride = stride
+        self.max_length = 512
 
         random.seed(42)
 
@@ -91,22 +94,50 @@ class PointWiseDataset(Dataset):
             question_text = self.questions[qid]
             document_text = self.corpus[docid]
 
-            encoding = self.tokenizer(
-                question_text,
-                document_text,
-                truncation="only_second",
-                max_length=512,
-                padding="max_length",
-                return_tensors="pt"
-            )
+            # tokenize document separately to manage chunks
+            doc_tokens = self.tokenizer.tokenize(document_text)
+            total_tokens = len(doc_tokens)
 
-            self.tokenized_data.append({
-                "query_id": qid,
-                "document_id": docid,
-                "input_ids": encoding["input_ids"].squeeze(0),
-                "attention_mask": encoding["attention_mask"].squeeze(0),
-                "label": label,
-            })
+            if total_tokens <= self.max_length:
+                # single chunk
+                encoding = self.tokenizer(
+                    question_text,
+                    document_text,
+                    truncation="only_second",
+                    max_length=self.max_length,
+                    padding="max_length",
+                    return_tensors="pt"
+                )
+                self.tokenized_data.append({
+                    "query_id": qid,
+                    "document_id": docid,
+                    "input_ids": encoding["input_ids"].squeeze(0),
+                    "attention_mask": encoding["attention_mask"].squeeze(0),
+                    "label": label,
+                })
+            else:
+                # split into overlapping chunks
+                for start in range(0, total_tokens, self.stride):
+                    end = start + (self.max_length - 50)  # keep space for question tokens
+                    chunk_tokens = doc_tokens[start:end]
+                    chunk_text = self.tokenizer.convert_tokens_to_string(chunk_tokens)
+
+                    encoding = self.tokenizer(
+                        question_text,
+                        chunk_text,
+                        truncation="only_second",
+                        max_length=self.max_length,
+                        padding="max_length",
+                        return_tensors="pt"
+                    )
+
+                    self.tokenized_data.append({
+                        "query_id": qid,
+                        "document_id": docid,
+                        "input_ids": encoding["input_ids"].squeeze(0),
+                        "attention_mask": encoding["attention_mask"].squeeze(0),
+                        "label": label,
+                    })
 
     def __len__(self):
         return len(self.tokenized_data)
