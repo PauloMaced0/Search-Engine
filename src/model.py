@@ -1,10 +1,10 @@
 import torch.nn as nn
-from transformers import BertModel
+from transformers import AutoModel
 
 class BertCrossEncoder(nn.Module):
     def __init__(self, pretrained_model="bert-base-uncased", dropout=0.3):
         super().__init__()
-        self.bert = BertModel.from_pretrained(pretrained_model)
+        self.bert = AutoModel.from_pretrained(pretrained_model)
         # self.bert.resize_token_embeddings(vocab_size)
         self.dropout = nn.Dropout(dropout)
         self.classifier = nn.Linear(self.bert.config.hidden_size, 1)
