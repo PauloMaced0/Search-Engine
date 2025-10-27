@@ -20,17 +20,18 @@ Make sure to have Python 3.x installed on your machine.
 > If you are working with the **reranking** model download [GloVe Pretrained Word Embeddings](https://nlp.stanford.edu/projects/glove/) (`Common Crawl (42B tokens, 1.9M vocab, uncased, 300d vectors, 1.75 GB download): glove.42B.300d.zip`).
 > After being downloaded, unzip it on the `data` folder.
 
-## Downloading Data Files with Git LFS
+## Downloading Data Files and Reranker Model with Git LFS
 
-Some of the large dataset files in the `data/` folder are tracked with **Git LFS**. After cloning this repository for the first time, you need to fetch them explicitly.
+Some of the large dataset files in the `data/` folder and reranker model under `model/` folder are tracked with **Git LFS**. After cloning this repository for the first time, you need to fetch them.
 
-#### Required files:
-- `MEDLINE_2024_Baseline.jsonl`
-- `questions.jsonl`
-- `questions_bm25_ranked.jsonl`
-- `ranked_questions.jsonl`
-- `training_data.jsonl`
-- `training_data_bm25_ranked.jsonl`
+#### Git LFS tracked files:
+- `data/MEDLINE_2024_Baseline.jsonl`
+- `data/questions.jsonl`
+- `data/questions_bm25_ranked.jsonl`
+- `data/ranked_questions.jsonl`
+- `data/training_data.jsonl`
+- `data/training_data_bm25_ranked.jsonl`
+- `model/model_nDGC10_65pp.pt`
 
 #### Steps to download:
 
