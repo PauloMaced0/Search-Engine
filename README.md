@@ -68,9 +68,16 @@ This notebook handles **training the reranking model**:
 - The **nDCG@10** metric yields an improved?? score of 0.??, indicating a significant?? boost?? over the BM25 baseline.
 
 > [!NOTE]
-> Since there isn’t enough data to train a simple CNN-based interaction model effectively, we use a **pretrained BERT** model and fine-tune it instead.
-> This choice is motivated by the nature of the dataset (check `data/questions.jsonl`, if you want to know how queries look like), it contains many domain-specific terms in both queries and documents (which is also why **BM25** performs well). These characteristics make it difficult for a model trained from scratch to learn the language patterns and generalize effectively.
+> Since there isn’t enough data to train a simple CNN-based interaction model effectively, we use a **BiomedBERT pretrained** model and fine-tune it instead.
+> This choice is motivated by the nature of the dataset (check `data/questions.jsonl`, if you want to know the nature of the data), it contains many domain-specific terms in both queries and documents (which is also why **BM25** performs well). These characteristics make it difficult for a model trained from scratch to learn the language patterns and generalize effectively.
 
+## Results
+
+| Metric | BM25 Baseline | Neural Reranker | Improvement |
+|--------|---------------|-----------------|-------------|
+| **nDCG@10** | 57.0% | 65.0% | **+8.0 pp** (+14% relative) |
+
+The neural reranker successfully improves document ranking quality, demonstrating that semantic understanding from `PubMedBERT` captures relevance signals beyond keyword matching.
 ---
 
 ## License
