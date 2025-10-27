@@ -64,8 +64,7 @@ This notebook handles **training the reranking model**:
 - Trains a neural model (CNN-based) to distinguish relevant from non-relevant documents.
 - Saves the trained model for later inference.
 - Loads the best pretrained model.
-- Evaluates reranked results against the baseline (improved nDCG).
-- The **nDCG@10** metric yields an improved?? score of 0.??, indicating a significant?? boost?? over the BM25 baseline.
+- Evaluates reranked results against the baseline (nDCG).
 
 > [!NOTE]
 > Since there isn’t enough data to train a simple CNN-based interaction model effectively, we use a **BiomedBERT pretrained** model and fine-tune it instead.
@@ -78,6 +77,7 @@ This notebook handles **training the reranking model**:
 | **nDCG@10** | 57.0% | 65.0% | **+8.0 pp** (+14% relative) |
 
 The neural reranker successfully improves document ranking quality, demonstrating that semantic understanding from `PubMedBERT` captures relevance signals beyond keyword matching.
+
 ---
 
 ## License
