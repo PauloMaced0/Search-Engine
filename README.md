@@ -16,9 +16,6 @@ python3 -m pip install -r requirements.txt
 ```
 
 Make sure to have Python 3.x installed on your machine.
-> [!NOTE]
-> If you are working with the **reranking** model download [GloVe Pretrained Word Embeddings](https://nlp.stanford.edu/projects/glove/) (`Common Crawl (42B tokens, 1.9M vocab, uncased, 300d vectors, 1.75 GB download): glove.42B.300d.zip`).
-> After being downloaded, unzip it on the `data` folder.
 
 ## Downloading Data Files and Reranker Model with Git LFS
 
