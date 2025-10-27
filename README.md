@@ -20,17 +20,18 @@ Make sure to have Python 3.x installed on your machine.
 > If you are working with the **reranking** model download [GloVe Pretrained Word Embeddings](https://nlp.stanford.edu/projects/glove/) (`Common Crawl (42B tokens, 1.9M vocab, uncased, 300d vectors, 1.75 GB download): glove.42B.300d.zip`).
 > After being downloaded, unzip it on the `data` folder.
 
-## Downloading Data Files with Git LFS
+## Downloading Data Files and Reranker Model with Git LFS
 
-Some of the large dataset files in the `data/` folder are tracked with **Git LFS**. After cloning this repository for the first time, you need to fetch them explicitly.
+Some of the large dataset files in the `data/` folder and reranker model under `model/` folder are tracked with **Git LFS**. After cloning this repository for the first time, you need to fetch them.
 
-#### Required files:
-- `MEDLINE_2024_Baseline.jsonl`
-- `questions.jsonl`
-- `questions_bm25_ranked.jsonl`
-- `ranked_questions.jsonl`
-- `training_data.jsonl`
-- `training_data_bm25_ranked.jsonl`
+#### Git LFS tracked files:
+- `data/MEDLINE_2024_Baseline.jsonl`
+- `data/questions.jsonl`
+- `data/questions_bm25_ranked.jsonl`
+- `data/ranked_questions.jsonl`
+- `data/training_data.jsonl`
+- `data/training_data_bm25_ranked.jsonl`
+- `model/model_nDGC10_65pp.pt`
 
 #### Steps to download:
 
@@ -64,8 +65,7 @@ This notebook handles **training the reranking model**:
 - Trains a neural model (CNN-based) to distinguish relevant from non-relevant documents.
 - Saves the trained model for later inference.
 - Loads the best pretrained model.
-- Evaluates reranked results against the baseline (improved nDCG).
-- The **nDCG@10** metric yields an improved?? score of 0.??, indicating a significant?? boost?? over the BM25 baseline.
+- Evaluates reranked results against the baseline (nDCG).
 
 > [!NOTE]
 > Since there isn’t enough data to train a simple CNN-based interaction model effectively, we use a **BiomedBERT pretrained** model and fine-tune it instead.
@@ -78,6 +78,7 @@ This notebook handles **training the reranking model**:
 | **nDCG@10** | 57.0% | 65.0% | **+8.0 pp** (+14% relative) |
 
 The neural reranker successfully improves document ranking quality, demonstrating that semantic understanding from `PubMedBERT` captures relevance signals beyond keyword matching.
+
 ---
 
 ## License
